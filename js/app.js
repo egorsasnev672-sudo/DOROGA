@@ -129,7 +129,7 @@ const App = (() => {
   }
 
   function renderNav() {
-    document.querySelectorAll("[data-nav]").forEach(el => {
+    document.querySelectorAll(".tab").forEach(el => {
       el.classList.toggle("active", el.dataset.nav === currentView);
     });
   }
@@ -138,6 +138,10 @@ const App = (() => {
     renderHUD();
     renderNav();
     const app = document.getElementById("app");
+    
+    // Очищаем контейнер перед рендером, чтобы старые обработчики удалялись
+    app.innerHTML = ""; 
+
     switch (currentView) {
       case "home": viewHome(app); break;
       case "library": viewLibrary(app); break;
@@ -166,20 +170,20 @@ const App = (() => {
       null;
   }
 
+  // --- НОВАЯ ГЛАВНАЯ СТРАНИЦА ---
   function viewHome(app) {
     const lvl = getLevel();
     
     app.innerHTML = `
       <div style="text-align:center; margin: 20px 0 30px;">
-        <div style="font-size:3.5rem; filter: drop-shadow(0 10px 20px rgba(79, 138, 255, 0.4)); margin-bottom:10px;">🚦</div>
+        <div style="font-size:3.5rem; margin-bottom:10px;">🚦</div>
         <h1 style="font-size:2rem; margin:0; font-weight:800;">Привет, Водитель!</h1>
         <p class="dim" style="margin-top:8px; font-size:1.05rem;">${lvl.name} · ${progress.xp} XP</p>
       </div>
 
-      <!-- Блок быстрого старта -->
-      <div class="card" style="background: linear-gradient(135deg, rgba(79, 138, 255, 0.15), rgba(18, 32, 58, 0.6)); border-color: rgba(79, 138, 255, 0.4); margin-bottom: 24px;">
+      <div class="card" style="background: var(--bg-card-hover); margin-bottom: 24px;">
         <h3 style="margin-top:0; color:#fff;">🔥 Продолжить обучение</h3>
-        <p class="dim" style="font-size:0.9rem; margin-bottom:16px;">Стрик: ${progress.streak} дней подряд. Не теряй ритм!</p>
+        <p class="dim" style="font-size:0.9rem; margin-bottom:16px;">Стрик: ${progress.streak} дней. Не теряй ритм!</p>
         <div style="display:flex; gap:12px;">
           <button class="btn primary" id="home-trip" style="flex:1;">🚗 Поездка</button>
           <button class="btn" id="home-quiz" style="flex:1;">🎯 Тест</button>
@@ -209,16 +213,19 @@ const App = (() => {
       </div>
     `;
     
+    // Обработчики для Главной
     document.querySelectorAll("[data-sec]").forEach(el => {
       el.addEventListener("click", () => {
         currentSection = el.dataset.sec;
         go("section");
       });
     });
+    
     document.getElementById("home-trip").addEventListener("click", () => TripEngine.start());
     document.getElementById("home-quiz").addEventListener("click", () => go("quiz"));
     document.getElementById("home-all-rules").addEventListener("click", () => go("library"));
   }
+
   function getSectionData(id) {
     if (id.startsWith("signs-")) {
       return PDD_DATA.signs.sections.find(s => s.id === id);
@@ -229,14 +236,13 @@ const App = (() => {
   function viewSection(app) {
     const sec = getSectionData(currentSection);
     if (!sec) { go("home"); return; }
-    const isSigns = currentSection.startsWith("signs-");
     app.innerHTML = `
-      <button class="btn ghost" id="sec-back" style="width:auto;margin-bottom:12px">← Назад</button>
+      <button class="btn ghost" id="sec-back" style="width:auto;margin-bottom:12px; padding:10px 16px;">← Назад</button>
       <h1>${sec.title}</h1>
       <div id="sec-list">
         ${sec.cards.map(c => `
           <div class="lib-card" data-card="${c.id}">
-            ${c.image ? `<img src="${c.image}" alt="" onerror="this.style.display='none'" />` : `<div class="ico" style="font-size:1.6rem;width:64px;text-align:center">📘</div>`}
+            ${c.image ? `<img src="${c.image}" alt="" onerror="this.style.display='none'" />` : `<div style="font-size:1.6rem;width:64px;text-align:center">📘</div>`}
             <div class="lib-body">
               <div class="lib-title">${c.title}</div>
               <div class="lib-sub">${c.subtitle || ""}</div>
@@ -261,11 +267,11 @@ const App = (() => {
     const c = findCard(currentCardId);
     if (!c) { go("home"); return; }
     app.innerHTML = `
-      <button class="btn ghost" id="c-back" style="width:auto;margin-bottom:12px">← Назад</button>
+      <button class="btn ghost" id="c-back" style="width:auto;margin-bottom:12px; padding:10px 16px;">← Назад</button>
       <div class="card">
-        ${c.image ? `<div style="text-align:center;margin-bottom:12px"><img src="${c.image}" alt="" style="max-width:120px;max-height:120px;object-fit:contain" onerror="this.style.display='none'" /></div>` : ""}
+        ${c.image ? `<div style="text-align:center;margin-bottom:16px"><img src="${c.image}" alt="" style="max-width:120px;max-height:120px;object-fit:contain; background:#fff; border-radius:12px; padding:8px;" onerror="this.style.display='none'" /></div>` : ""}
         <h1 style="margin-top:0">${c.title}</h1>
-        ${c.subtitle ? `<div class="dim" style="margin-bottom:8px">${c.subtitle}</div>` : ""}
+        ${c.subtitle ? `<div class="dim" style="margin-bottom:12px">${c.subtitle}</div>` : ""}
         <p>${c.description || ""}</p>
       </div>
       <div class="btn-row">
@@ -283,16 +289,22 @@ const App = (() => {
       <h1>📚 Библиотека</h1>
       <h2>Знаки</h2>
       ${PDD_DATA.signs.sections.map(s => `
-        <div class="section-row" data-sec="${s.id}">
-          <div class="ico">🚸</div>
-          <div class="body"><div class="title">${s.title}</div><div class="sub">${s.cards.length} знаков</div></div>
+        <div class="section-row" data-sec="${s.id}" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div class="lib-title" style="font-weight:700;">${s.title}</div>
+            <div class="lib-sub dim">${s.cards.length} знаков</div>
+          </div>
+          <div style="font-size:1.2rem; color:var(--text-dim);">→</div>
         </div>
       `).join("")}
-      <h2>Правила</h2>
+      <h2>Правила ПДД</h2>
       ${PDD_DATA.rules.sections.map(s => `
-        <div class="section-row" data-sec="${s.id}">
-          <div class="ico">📘</div>
-          <div class="body"><div class="title">${s.title}</div><div class="sub">${s.cards.length} карточек</div></div>
+        <div class="section-row" data-sec="${s.id}" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div class="lib-title" style="font-weight:700;">${s.title}</div>
+            <div class="lib-sub dim">${s.cards.length} карточек</div>
+          </div>
+          <div style="font-size:1.2rem; color:var(--text-dim);">→</div>
         </div>
       `).join("")}
     `;
@@ -307,20 +319,26 @@ const App = (() => {
       <p class="dim">Выберите раздел:</p>
       <h2>Знаки</h2>
       ${PDD_DATA.signs.sections.map(s => `
-        <div class="section-row" data-quiz="${s.id}">
-          <div class="ico">🚸</div>
-          <div class="body"><div class="title">${s.title}</div><div class="sub">${s.cards.length} знаков</div></div>
+        <div class="section-row" data-quiz="${s.id}" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div class="lib-title" style="font-weight:700;">${s.title}</div>
+            <div class="lib-sub dim">${s.cards.length} знаков</div>
+          </div>
+          <div style="font-size:1.2rem; color:var(--text-dim);">→</div>
         </div>
       `).join("")}
       <h2>Правила</h2>
       ${PDD_DATA.rules.sections.map(s => `
-        <div class="section-row" data-quiz="${s.id}">
-          <div class="ico">📘</div>
-          <div class="body"><div class="title">${s.title}</div><div class="sub">${s.cards.length} карточек</div></div>
+        <div class="section-row" data-quiz="${s.id}" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div class="lib-title" style="font-weight:700;">${s.title}</div>
+            <div class="lib-sub dim">${s.cards.length} карточек</div>
+          </div>
+          <div style="font-size:1.2rem; color:var(--text-dim);">→</div>
         </div>
       `).join("")}
       <div class="btn-row" style="margin-top:16px">
-        <button class="btn" id="quiz-all">🎲 Смешанный тест</button>
+        <button class="btn primary" id="quiz-all">🎲 Смешанный тест</button>
       </div>
     `;
     document.querySelectorAll("[data-quiz]").forEach(el => {
@@ -332,25 +350,22 @@ const App = (() => {
   function viewModes(app) {
     app.innerHTML = `
       <h1>🎮 Режимы</h1>
-      <div class="card">
-        <h3>🚗 Поездка</h3>
-        <p class="dim">10 сценариев, сердца. Провал при 0.</p>
-        <button class="btn primary" id="m-trip">Начать</button>
+      <div class="card" style="cursor:pointer;" id="mode-trip">
+        <h3 style="margin-top:0;">🚗 Поездка</h3>
+        <p class="dim" style="margin-bottom:0;">10 сценариев, сердца. Провал при 0.</p>
       </div>
-      <div class="card">
-        <h3>🚔 Гаишник</h3>
-        <p class="dim">Отметьте нарушения и главное.</p>
-        <button class="btn primary" id="m-cop">Начать</button>
+      <div class="card" style="cursor:pointer;" id="mode-cop">
+        <h3 style="margin-top:0;">🚔 Гаишник</h3>
+        <p class="dim" style="margin-bottom:0;">Отметьте нарушения и главное.</p>
       </div>
-      <div class="card">
-        <h3>🎯 Сценарий дня</h3>
-        <p class="dim">2 детерминированных сценария, 1 жизнь.</p>
-        <button class="btn primary" id="m-daily">Начать</button>
+      <div class="card" style="cursor:pointer;" id="mode-daily">
+        <h3 style="margin-top:0;">🎯 Сценарий дня</h3>
+        <p class="dim" style="margin-bottom:0;">2 детерминированных сценария, 1 жизнь.</p>
       </div>
     `;
-    document.getElementById("m-trip").addEventListener("click", () => TripEngine.start());
-    document.getElementById("m-cop").addEventListener("click", () => CopEngine.start());
-    document.getElementById("m-daily").addEventListener("click", () => DailyEngine.start());
+    document.getElementById("mode-trip").addEventListener("click", () => TripEngine.start());
+    document.getElementById("mode-cop").addEventListener("click", () => CopEngine.start());
+    document.getElementById("mode-daily").addEventListener("click", () => DailyEngine.start());
   }
 
   function viewProfile(app) {
@@ -360,24 +375,38 @@ const App = (() => {
     app.innerHTML = `
       <h1>👤 Профиль</h1>
       <div class="card">
-        <div style="font-size:1.2rem;font-weight:700">${lvl.name}</div>
-        <div class="dim">${progress.xp} XP</div>
-        <div class="progress"><span style="width:${nextLvl ? Math.min(100, (progress.xp / nextLvl.xp) * 100) : 100}%"></span></div>
+        <div style="font-size:1.3rem;font-weight:800; color:var(--accent);">${lvl.name}</div>
+        <div class="dim" style="margin-top:4px;">${progress.xp} XP</div>
+        <div class="progress" style="margin:12px 0;"><span style="width:${nextLvl ? Math.min(100, (progress.xp / nextLvl.xp) * 100) : 100}%"></span></div>
         ${nextLvl ? `<div class="dim" style="font-size:.85rem">До ${nextLvl.name}: ${xpToNext} XP</div>` : "<div class='dim'>Максимальный уровень!</div>"}
       </div>
-      <div class="card">
-        <div>🔥 Стрик: <strong>${progress.streak}</strong></div>
-        <div>❤️ Сердца: <strong>${progress.hearts}/5</strong></div>
-        <div>📖 Изучено сценариев: <strong>${Object.keys(progress.seenScenarios).length}</strong></div>
+      
+      <div class="card" style="display:flex; justify-content:space-between; text-align:center;">
+        <div>
+          <div style="font-size:1.5rem; margin-bottom:4px;">🔥</div>
+          <div style="font-weight:700;">${progress.streak}</div>
+          <div class="dim" style="font-size:0.8rem;">Стрик</div>
+        </div>
+        <div>
+          <div style="font-size:1.5rem; margin-bottom:4px;">❤️</div>
+          <div style="font-weight:700;">${progress.hearts}/5</div>
+          <div class="dim" style="font-size:0.8rem;">Сердца</div>
+        </div>
+        <div>
+          <div style="font-size:1.5rem; margin-bottom:4px;">📖</div>
+          <div style="font-weight:700;">${Object.keys(progress.seenScenarios).length}</div>
+          <div class="dim" style="font-size:0.8rem;">Изучено</div>
+        </div>
       </div>
-      <h2>Сброс прогресса</h2>
+
+      <h2 style="color:var(--error);">Сброс прогресса</h2>
       <div class="btn-row">
         <button class="btn danger" id="p-reset">Сбросить всё</button>
       </div>
-      <div class="divider"></div>
-      <p class="dim" style="font-size:.85rem">
-        Приложение работает полностью на устройстве. Прогресс хранится в localStorage (pdd_progress).
-        Аналитики, cookies, трекеров нет. Сетевые запросы — только PNG знаков.
+      <div class="divider" style="height:1px; background:var(--border); margin:24px 0;"></div>
+      <p class="dim" style="font-size:.85rem; text-align:center;">
+        Приложение работает полностью на устройстве.<br>
+        Аналитики, cookies и трекеров нет.
       </p>
     `;
     document.getElementById("p-reset").addEventListener("click", () => {
@@ -391,11 +420,12 @@ const App = (() => {
   }
 
   function bindEvents() {
+    // Навигация внизу экрана
     document.querySelectorAll("[data-nav]").forEach(el => {
-      el.addEventListener("click", (e) => {
+      el.onclick = (e) => {
         e.preventDefault();
         go(el.dataset.nav);
-      });
+      };
     });
   }
 
@@ -412,11 +442,9 @@ const App = (() => {
     init, loadProgress, saveProgress, checkStreak, restoreHearts,
     loseHeart, addHeart, addXP, getLevel, getDifficultyRange,
     markSeen, getUnseenScenarios, go, render, renderHUD, heartIcons,
-    viewHome, viewSection, viewLibrary, viewQuizMenu, viewModes, viewProfile,
-    bindEvents,
-    get progress() { return progress; },
-    set progress(v) { progress = v; },
     LEVELS, todayStr,
+    get progress() { return progress; },
+    set progress(v) { progress = v; }
   };
 })();
 
