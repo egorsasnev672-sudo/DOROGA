@@ -44,7 +44,8 @@ const TripEngine = (() => {
         <span>${App.heartIcons()}</span>
       </div>
       <div class="progress"><span style="width:${(state.idx / total) * 100}%"></span></div>
-      <div class="quiz-question">${escapeHtml(sc.text)}</div>
+    ${sc.image ? `<div style="text-align:center; margin-bottom:16px;"><img src="${sc.image}" style="max-height:120px; background:#fff; border-radius:12px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,0.3);"></div>` : ""}
+<div class="quiz-question">${escapeHtml(sc.text)}</div>
       <div id="t-options">
         ${sc.options.map((opt, i) => `
           <button class="option" data-i="${i}">${escapeHtml(opt.text)}</button>
