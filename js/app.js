@@ -168,63 +168,57 @@ const App = (() => {
 
   function viewHome(app) {
     const lvl = getLevel();
-    const nextLvl = LEVELS.find(l => l.lvl === lvl.lvl + 1);
-    const xpToNext = nextLvl ? nextLvl.xp - progress.xp : 0;
-
+    
     app.innerHTML = `
-      <h1>Привет! 👋</h1>
-      <div class="card">
-        <div class="dim">Уровень</div>
-        <div style="font-size:1.3rem;font-weight:700">${lvl.name}</div>
-        <div class="dim" style="font-size:.85rem">${progress.xp} XP${nextLvl ? ` · до следующего ${xpToNext} XP` : ""}</div>
-        <div class="progress"><span style="width:${nextLvl ? Math.min(100, (progress.xp / nextLvl.xp) * 100) : 100}%"></span></div>
-        <div class="btn-row">
-          <button class="btn primary" id="home-trip">🚗 Поездка</button>
-          <button class="btn" id="home-quiz">🎯 Тест</button>
+      <div style="text-align:center; margin: 20px 0 30px;">
+        <div style="font-size:3.5rem; filter: drop-shadow(0 10px 20px rgba(79, 138, 255, 0.4)); margin-bottom:10px;">🚦</div>
+        <h1 style="font-size:2rem; margin:0; font-weight:800;">Привет, Водитель!</h1>
+        <p class="dim" style="margin-top:8px; font-size:1.05rem;">${lvl.name} · ${progress.xp} XP</p>
+      </div>
+
+      <!-- Блок быстрого старта -->
+      <div class="card" style="background: linear-gradient(135deg, rgba(79, 138, 255, 0.15), rgba(18, 32, 58, 0.6)); border-color: rgba(79, 138, 255, 0.4); margin-bottom: 24px;">
+        <h3 style="margin-top:0; color:#fff;">🔥 Продолжить обучение</h3>
+        <p class="dim" style="font-size:0.9rem; margin-bottom:16px;">Стрик: ${progress.streak} дней подряд. Не теряй ритм!</p>
+        <div style="display:flex; gap:12px;">
+          <button class="btn primary" id="home-trip" style="flex:1;">🚗 Поездка</button>
+          <button class="btn" id="home-quiz" style="flex:1;">🎯 Тест</button>
         </div>
       </div>
 
-      <h2>Знаки</h2>
-      ${PDD_DATA.signs.sections.map(s => `
-        <div class="section-row" data-sec="${s.id}">
-          <div class="ico">🚸</div>
-          <div class="body">
-            <div class="title">${s.title}</div>
-            <div class="sub">${s.cards.length} знаков</div>
+      <h2 style="margin-top:24px;">Знаки</h2>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:24px;">
+        ${PDD_DATA.signs.sections.map(s => `
+          <div class="card" data-sec="${s.id}" style="padding:20px 16px; text-align:center; cursor:pointer; margin:0;">
+            <div style="font-size:2rem; margin-bottom:8px;">🚸</div>
+            <div style="font-weight:700; font-size:0.95rem; margin-bottom:4px;">${s.title.split(' ')[0]}</div>
+            <div class="dim" style="font-size:0.8rem;">${s.cards.length} знаков</div>
           </div>
-        </div>
-      `).join("")}
+        `).join("")}
+      </div>
 
-      <h2>Правила</h2>
-      ${PDD_DATA.rules.sections.map(s => `
-        <div class="section-row" data-sec="${s.id}">
-          <div class="ico">📘</div>
-          <div class="body">
-            <div class="title">${s.title}</div>
-            <div class="sub">${s.cards.length} карточек</div>
+      <h2>Правила ПДД</h2>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        ${PDD_DATA.rules.sections.slice(0, 5).map(s => `
+          <div class="card" data-sec="${s.id}" style="padding:16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin:0;">
+            <div style="font-weight:600;">${s.title}</div>
+            <div class="dim" style="font-size:1.2rem;">→</div>
           </div>
-        </div>
-      `).join("")}
-
-      <div class="btn-row" style="margin-top:24px">
-        <button class="btn ghost" id="home-daily">🎯 Сценарий дня</button>
+        `).join("")}
+        <button class="btn ghost" id="home-all-rules" style="margin-top:8px;">Посмотреть все 26 разделов</button>
       </div>
     `;
+    
     document.querySelectorAll("[data-sec]").forEach(el => {
       el.addEventListener("click", () => {
         currentSection = el.dataset.sec;
         go("section");
       });
     });
-    document.getElementById("home-trip").addEventListener("click", () => {
-      TripEngine.start();
-    });
+    document.getElementById("home-trip").addEventListener("click", () => TripEngine.start());
     document.getElementById("home-quiz").addEventListener("click", () => go("quiz"));
-    document.getElementById("home-daily").addEventListener("click", () => {
-      DailyEngine.start();
-    });
+    document.getElementById("home-all-rules").addEventListener("click", () => go("library"));
   }
-
   function getSectionData(id) {
     if (id.startsWith("signs-")) {
       return PDD_DATA.signs.sections.find(s => s.id === id);
