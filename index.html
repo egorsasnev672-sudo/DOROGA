@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1628" />
+  <title>🚦 Дорога — ПДД-тренажёр</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <a class="brand" href="#" data-nav="home">🚦 Дорога</a>
+      <div class="hud">
+        <span class="hud-item" id="hud-streak" title="Стрик">🔥 0</span>
+        <span class="hud-item" id="hud-hearts" title="Сердца">❤️ 5/5</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="app" class="app-main"></main>
+
+  <nav class="tabbar" id="tabbar">
+    <button class="tab" data-nav="home">🏠<span>Главная</span></button>
+    <button class="tab" data-nav="library">📚<span>Библиотека</span></button>
+    <button class="tab" data-nav="quiz">🎯<span>Тест</span></button>
+    <button class="tab" data-nav="modes">🎮<span>Режимы</span></button>
+    <button class="tab" data-nav="profile">👤<span>Профиль</span></button>
+  </nav>
+
+  <script src="js/data.js"></script>
+  <script src="js/quiz.js"></script>
+  <script src="js/trip.js"></script>
+  <script src="js/cop.js"></script>
+  <script src="js/daily.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
