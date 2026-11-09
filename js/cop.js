@@ -1,35 +1,72 @@
-/* CopEngine — «Гаишник»: чекбоксы нарушений → главное */
+/* CopEngine — «Гаишник»: отдельные сценарии нарушений */
 const CopEngine = (() => {
   let state = null;
 
+  // База нарушений для режима Гаишник (создана специально для этого режима)
+  const COP_SCENARIOS = [
+    {
+      text: "Водитель движется по городу со скоростью 95 км/ч.",
+      violations: [
+        { text: "Превышение максимальной скорости", isMain: true },
+        { text: "Опасное вождение", isMain: false }
+      ]
+    },
+    {
+      text: "Автомобиль выехал на перекрёсток на красный сигнал светофора и столкнулся с другой машиной.",
+      violations: [
+        { text: "Проезд на запрещающий сигнал светофора", isMain: true },
+        { text: "Несоблюдение дистанции", isMain: false }
+      ]
+    },
+    {
+      text: "Водитель остановился на пешеходном переходе (на зебре), чтобы купить воды в киоске.",
+      violations: [
+        { text: "Остановка на пешеходном переходе", isMain: true },
+        { text: "Создание помех пешеходам", isMain: false }
+      ]
+    },
+    {
+      text: "Водитель разговаривает по телефону, держа его в руке, во время движения.",
+      violations: [
+        { text: "Использование телефона без гарнитуры", isMain: true },
+        { text: "Отвлечение от управления ТС", isMain: false }
+      ]
+    },
+    {
+      text: "Машина выехала на полосу встречного движения через сплошную линию разметки.",
+      violations: [
+        { text: "Выезд на встречную полосу", isMain: true },
+        { text: "Пересечение сплошной линии разметки", isMain: true }
+      ]
+    },
+    {
+      text: "Автомобиль припарковался на месте для инвалидов без соответствующего знака на кузове.",
+      violations: [
+        { text: "Стоянка на месте для инвалидов", isMain: true },
+        { text: "Нарушение правил парковки", isMain: false }
+      ]
+    }
+  ];
+
   function start(onFinish) {
-    const range = App.getDifficultyRange();
-    let pool = PDD_DATA.scenarios.filter(sc => sc.mode.includes("cop") && sc.difficulty >= range[0] && sc.difficulty <= range[1]);
-    if (pool.length < 5) pool = PDD_DATA.scenarios.filter(sc => sc.mode.includes("cop"));
-    pool = shuffle(pool).slice(0, 5);
+    // Берем 5 случайных ситуаций
+    let pool = shuffle(COP_SCENARIOS.slice()).slice(0, 5);
 
     state = {
       onFinish,
-      steps: pool.map(sc => enrich(sc)),
+      steps: pool.map(sc => {
+        // Добавляем 2 ложных нарушения для перемешивания
+        const fakes = ["Непристёгнутый ремень", "Езда без номеров", "Отсутствие аптечки", "Непройденный техосмотр"]
+          .filter(f => !sc.violations.some(v => v.text === f));
+        const extraFakes = shuffle(fakes).slice(0, 2).map(t => ({ text: t, isMain: false }));
+        return Object.assign({}, sc, { violations: shuffle(sc.violations.concat(extraFakes)) });
+      }),
       idx: 0,
       phase: "check", // check | main | done
       chosen: new Set(),
-      mainIdx: null,
       correctCount: 0,
-      usedIds: new Set(),
     };
     render();
-  }
-
-  function enrich(sc) {
-    // Генерируем нарушения из options (правильные — как нарушения) + добавляем случайные
-    const all = PDD_DATA.scenarios.filter(x => x.id !== sc.id).flatMap(x => x.options || []).map(o => o.text);
-    const uniq = Array.from(new Set(all));
-    const violations = sc.options.map(o => ({ text: o.text, isMain: o.correct, rule: o.rule || "" }));
-    // Добавим 2–3 ложных
-    const fakes = shuffle(uniq).filter(t => !violations.some(v => v.text === t)).slice(0, 3);
-    fakes.forEach(t => violations.push({ text: t, isMain: false, rule: "" }));
-    return Object.assign({}, sc, { violations: shuffle(violations) });
   }
 
   function shuffle(arr) {
@@ -54,8 +91,8 @@ const CopEngine = (() => {
           <span>${App.heartIcons()}</span>
         </div>
         <div class="progress"><span style="width:${(state.idx / total) * 100}%"></span></div>
-        <div class="quiz-question">${escapeHtml(sc.text)}</div>
-        <p class="dim">Отметьте все нарушения:</p>
+        <div class="quiz-question" style="background:var(--navy-700);padding:16px;border-radius:12px">${escapeHtml(sc.text)}</div>
+        <p class="dim" style="margin-top:16px">Выберите все нарушения, которые видите:</p>
         <div id="c-checks">
           ${sc.violations.map((v, i) => `
             <label class="check-item" data-i="${i}">
@@ -78,16 +115,19 @@ const CopEngine = (() => {
       });
       document.getElementById("c-check").addEventListener("click", checkViolations);
       document.getElementById("c-quit").addEventListener("click", () => { state = null; App.render(); });
-    } else if (state.phase === "main") {
+    } 
+    else if (state.phase === "main") {
+      // Находим главное нарушение для показа вариантов
+      const mainViolations = sc.violations.filter(v => v.isMain);
       app.innerHTML = `
         <div class="quiz-top">
           <span>🚔 Главное нарушение</span>
           <span>${App.heartIcons()}</span>
         </div>
         <div class="progress"><span style="width:${((state.idx + 0.5) / total) * 100}%"></span></div>
-        <div class="quiz-question">Выберите главное нарушение:</div>
+        <div class="quiz-question">Какое из отмеченных нарушений является самым грубым (главным)?</div>
         <div id="c-radios">
-          ${sc.violations.map((v, i) => `
+          ${mainViolations.map((v, i) => `
             <label class="radio-item" data-i="${i}">
               <input type="radio" name="main" value="${i}" />
               <span class="radio-dot"></span>
@@ -99,25 +139,28 @@ const CopEngine = (() => {
           <button class="btn primary" id="c-confirm">Подтвердить</button>
         </div>
       `;
+      // Навешиваем обработчик на кнопку
       document.getElementById("c-confirm").addEventListener("click", () => {
         const sel = document.querySelector('input[name="main"]:checked');
-        if (!sel) return;
-        state.mainIdx = parseInt(sel.value);
-        confirmMain();
+        if (!sel) return alert("Выберите вариант!");
+        confirmMain(mainViolations[parseInt(sel.value)]);
       });
     }
   }
 
   function checkViolations() {
     const sc = state.steps[state.idx];
-    let ok = 0, total = 0;
     const checks = document.querySelectorAll(".check-item");
+    let hasMain = false;
+
     sc.violations.forEach((v, i) => {
       const isChecked = state.chosen.has(i);
       const label = checks[i];
+      
+      if (v.isMain) hasMain = true;
+
       if (isChecked) {
-        total++;
-        if (v.isMain) { ok++; label.classList.add("correct"); }
+        if (v.isMain) { label.classList.add("correct"); }
         else { label.classList.add("wrong"); App.loseHeart(); App.addXP(-15); }
       } else if (v.isMain) {
         label.classList.add("wrong");
@@ -125,46 +168,44 @@ const CopEngine = (() => {
         App.addXP(-15);
       }
     });
+    
     document.querySelectorAll(".check-item input").forEach(cb => cb.disabled = true);
     document.getElementById("c-check").style.display = "none";
-    // Переход к выбору главного
-    const scNow = state.steps[state.idx];
-    const hasMain = scNow.violations.some(v => v.isMain);
+    
     if (!hasMain) {
       state.idx++;
       if (state.idx >= state.steps.length) { finish(); return; }
-      state.chosen.clear(); state.mainIdx = null; state.phase = "check";
+      state.chosen.clear(); state.phase = "check";
       render();
       return;
     }
-    state.phase = "main";
-    render();
+    
+    // Переходим к выбору главного
+    setTimeout(() => {
+      state.phase = "main";
+      render();
+    }, 1000); // Даем секунду посмотреть на правильные ответы
   }
 
-  function confirmMain() {
-    const sc = state.steps[state.idx];
-    const v = sc.violations[state.mainIdx];
+  function confirmMain(mainViolation) {
+    state.correctCount++;
+    App.addXP(20);
+    
     document.querySelectorAll(".radio-item").forEach(r => r.style.pointerEvents = "none");
-    if (v.isMain) {
-      state.correctCount++;
-      App.addXP(20);
-    } else {
-      App.loseHeart();
-      App.addXP(-15);
-    }
+    
     document.getElementById("c-confirm").style.display = "none";
     const fb = document.createElement("div");
-    fb.className = "explain " + (v.isMain ? "ok" : "err");
-    fb.innerHTML = `<strong>${v.isMain ? "✅ Верно!" : "❌ Ошибка."}</strong><div>${escapeHtml(sc.explain || "")}</div>`;
+    fb.className = "explain ok";
+    fb.innerHTML = `<strong>✅ Верно!</strong><div>Главное нарушение: ${escapeHtml(mainViolation.text)}</div>`;
     document.getElementById("app").appendChild(fb);
+    
     const nextBtn = document.createElement("button");
     nextBtn.className = "btn primary";
-    nextBtn.textContent = "Далее";
+    nextBtn.textContent = "Следующая ситуация";
     nextBtn.style.marginTop = "12px";
     nextBtn.addEventListener("click", () => {
       state.idx++;
       state.chosen.clear();
-      state.mainIdx = null;
       state.phase = "check";
       if (App.progress.hearts <= 0) { fail(); return; }
       if (state.idx >= state.steps.length) { finish(); return; }
