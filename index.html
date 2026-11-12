@@ -5,20 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ПДД-Тренажёр «Дорога»</title>
   <link rel="stylesheet" href="css/style.css">
+  <!-- Иконка сайта (чтобы не было ошибки 404) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚦</text></svg>">
 </head>
 <body>
+  <!-- Шапка -->
   <header class="topbar">
-    <!-- Добавили класс logo для анимации -->
     <div class="logo">🚦 Дорога</div>
     <div class="top-stats">
-      <div class="stat-pill">🔥 <span id="streakCount">0</span></div>
-      <div class="stat-pill">❤️ <span id="heartsCount">5/5</span></div>
+      <div class="stat-pill" title="Стрик">
+        🔥 <span id="streakCount">0</span>
+      </div>
+      <div class="stat-pill" title="Сердца">
+        ❤️ <span id="heartsCount">5/5</span>
+      </div>
     </div>
   </header>
 
+  <!-- Основной контент -->
   <main id="app"></main>
 
+  <!-- Нижняя навигация -->
   <nav class="bottomnav">
     <button data-route="home" class="active">🏠 Главная</button>
     <button data-route="library">📚 Библиотека</button>
@@ -27,6 +34,7 @@
     <button data-route="profile">👤 Профиль</button>
   </nav>
 
+  <!-- Подключение скриптов (строго в этом порядке) -->
   <script src="js/data.js"></script>
   <script src="js/quiz.js"></script>
   <script src="js/trip.js"></script>
