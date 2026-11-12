@@ -227,7 +227,9 @@ const App = {
           <div class="stat"><span>${p.streak || 0}</span>🔥 Стрик</div>
           <div class="stat"><span>${p.hearts !== undefined ? p.hearts : 5}/5</span>❤️ Сердца</div>
         </div>
-        <button class="btn-danger" id="resetBtn" style="margin-top:20px">Сбросить всё</button>
+        
+        <button class="btn-secret" id="restoreHeartsBtn">🔧 Восстановить сердца (по паролю)</button>
+        <button class="btn-danger" id="resetBtn" style="margin-top:24px">Сбросить всё</button>
       </section>
     `;
   },
@@ -247,6 +249,18 @@ const App = {
     document.getElementById("startTripBtn")?.addEventListener("click", () => TripEngine.start(() => this.go("home")));
     document.getElementById("startCopBtn")?.addEventListener("click", () => CopEngine.start(() => this.go("home")));
     document.getElementById("startDailyBtn")?.addEventListener("click", () => DailyEngine.start(() => this.go("home")));
+
+    document.getElementById("restoreHeartsBtn")?.addEventListener("click", () => {
+      const password = prompt("Введите пароль для восстановления сердец:");
+      if (password === "admin") {
+        this.progress.hearts = 5;
+        this.saveProgress();
+        this.render();
+        alert("❤️ Сердца полностью восстановлены!");
+      } else if (password !== null) {
+        alert("❌ Неверный пароль!");
+      }
+    });
 
     document.getElementById("resetBtn")?.addEventListener("click", () => {
       if (confirm("Сбросить прогресс?")) {
