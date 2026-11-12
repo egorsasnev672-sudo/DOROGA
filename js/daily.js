@@ -2,7 +2,6 @@ const DailyEngine = {
   state: null,
   start(onFinish) {
     if (!SCENARIOS.length) return alert("Нет сценариев.");
-    // Берём 2 случайных (в будущем сделаем детерминированно от даты)
     this.state = { steps: SCENARIOS.slice(0, 2), index: 0, onFinish };
     this.render();
   },
