@@ -1,156 +1,66 @@
-/* TripEngine — «Поездка»: 10 сценариев, сердца, провал при 0 */
-const TripEngine = (() => {
-  let state = null;
+const TripEngine = {
+  state: null,
+  start(onFinish) {
+    const pool = SCENARIOS.filter(s => s.mode.includes("trip"));
+    if (!pool.length) return alert("Сценарии не загружены.");
+    // Для простоты берём первые 10 (потом можно добавить перемешивание)
+    const steps = pool.slice(0, 10);
+    this.state = { steps, index: 0, correct: 0, onFinish };
+    this.render();
+  },
+  render() {
+    const s = this.state;
+    if (s.index >= s.steps.length) return this.finish();
+    const q = s.steps[s.index];
+    
+    document.getElementById("app").innerHTML = `
+      <div class="quiz">
+        <h3>Шаг ${s.index + 1} из ${s.steps.length}</h3>
+        <h2 class="q-text">${q.text}</h2>
+        <div class="options">
+          ${q.options.map((opt, i) => `<button class="option" data-i="${i}">${opt.text}</button>`).join("")}
+        </div>
+        <div class="explain hidden" id="explain"></div>
+      </div>
+    `;
+    document.querySelectorAll(".option").forEach(btn => {
+      btn.onclick = () => this.answer(+btn.dataset.i, btn);
+    });
+  },
+  answer(i, btn) {
+    const s = this.state, q = s.steps[s.index];
+    document.querySelectorAll(".option").forEach(b => b.disabled = true);
+    const isCorrect = q.options[i].correct;
 
-  function start(onFinish) {
-    const range = App.getDifficultyRange();
-    let pool = App.getUnseenScenarios("trip")
-      .filter(sc => sc.difficulty >= range[0] && sc.difficulty <= range[1]);
-    if (pool.length < 10) pool = PDD_DATA.scenarios.filter(sc => sc.mode.includes("trip"));
-    pool = shuffle(pool).slice(0, 10);
+    if (isCorrect) { btn.classList.add("correct"); s.correct++; App.addXP(10); }
+    else { btn.classList.add("wrong"); App.loseHeart(); }
 
-    state = {
-      onFinish,
-      steps: pool,
-      idx: 0,
-      answered: false,
-      correctCount: 0,
-      lost: false,
+    const ex = document.getElementById("explain");
+    ex.classList.remove("hidden");
+    ex.innerHTML = `<strong>${isCorrect ? "Верно!" : "Ошибка"}</strong><br>${q.explain}<br>
+      <button class="btn-primary" id="nextQ" style="margin-top:15px">Далее</button>`;
+
+    document.getElementById("nextQ").onclick = () => {
+      if (App.progress.hearts <= 0) {
+        alert("Сердца закончились! Поездка провалена.");
+        App.saveStreak(); s.onFinish(); return;
+      }
+      s.index++; this.render();
     };
-    render();
-  }
-
-  function shuffle(arr) {
-    const a = arr.slice();
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
-
-  function render() {
-    const app = document.getElementById("app");
-    if (App.progress.hearts <= 0) {
-      fail();
-      return;
-    }
-    const sc = state.steps[state.idx];
-    const total = state.steps.length;
-
-    app.innerHTML = `
-      <div class="quiz-top">
-        <span>🚗 Шаг ${state.idx + 1} / ${total}</span>
-        <span>${App.heartIcons()}</span>
-      </div>
-      <div class="progress"><span style="width:${(state.idx / total) * 100}%"></span></div>
-    ${sc.image ? `<div style="text-align:center; margin-bottom:16px;"><img src="${sc.image}" style="max-height:120px; background:#fff; border-radius:12px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,0.3);"></div>` : ""}
-<div class="quiz-question">${escapeHtml(sc.text)}</div>
-      <div id="t-options">
-        ${sc.options.map((opt, i) => `
-          <button class="option" data-i="${i}">${escapeHtml(opt.text)}</button>
-        `).join("")}
-      </div>
-      <div id="t-feedback" style="display:none"></div>
-      <div class="btn-row">
-        <button class="btn ghost" id="t-quit">Выйти</button>
-      </div>
-    `;
-    app.querySelectorAll(".option").forEach(btn => {
-      btn.addEventListener("click", () => answer(parseInt(btn.dataset.i), btn));
-    });
-    document.getElementById("t-quit").addEventListener("click", () => { state = null; App.render(); });
-  }
-
-  function answer(i, btn) {
-    if (state.answered) return;
-    state.answered = true;
-    const sc = state.steps[state.idx];
-    const correct = sc.options[i].correct;
-    document.querySelectorAll(".option").forEach((b, idx) => {
-      b.disabled = true;
-      if (sc.options[idx].correct) b.classList.add("correct");
-      if (idx === i && !correct) b.classList.add("wrong");
-    });
-
-    App.markSeen(sc.id);
-
-    if (correct) {
-      state.correctCount++;
-      App.addXP(10);
-    } else {
-      App.loseHeart();
-      App.addXP(-15);
-    }
-
-    const fb = document.getElementById("t-feedback");
-    fb.style.display = "block";
-    fb.innerHTML = `
-      <div class="explain ${correct ? "ok" : "err"}">
-        <strong>${correct ? "✅ Верно!" : "❌ Ошибка."}</strong>
-        <div>Правильный ответ: <em>${escapeHtml(sc.options.find(o => o.correct).text)}</em></div>
-        <div style="margin-top:6px">${escapeHtml(sc.explain || "")}</div>
-        ${sc.cardId ? `<button class="btn ghost" id="t-review" style="margin-top:10px;width:auto">📖 Повторить карточку</button>` : ""}
-      </div>
-      <div class="btn-row">
-        <button class="btn primary" id="t-next">Далее</button>
-      </div>
-    `;
-    const review = document.getElementById("t-review");
-    if (review) review.addEventListener("click", () => { state = null; App.go("card", sc.cardId); });
-    document.getElementById("t-next").addEventListener("click", next);
-    App.renderHUD();
-  }
-
-  function next() {
-    state.answered = false;
-    state.idx++;
-    if (App.progress.hearts <= 0) { fail(); return; }
-    if (state.idx >= state.steps.length) { finish(); return; }
-    render();
-  }
-
-  function fail() {
-    const s = state;
-    state = null;
+  },
+  finish() {
     document.getElementById("app").innerHTML = `
-      <div class="card center">
-        <div class="big-emoji">💥</div>
-        <h1>Поездка провалена</h1>
-        <p class="dim">Сердца закончились. Восстановите их и попробуйте снова.</p>
-        <div class="btn-row"><button class="btn primary" id="t-back">На главную</button></div>
+      <div class="result">
+        <h2>Вы доехали!</h2>
+        <p>Правильных решений: ${this.state.correct}/${this.state.steps.length}</p>
+        <button class="btn-primary" id="finBtn">На главную</button>
       </div>
     `;
-    document.getElementById("t-back").addEventListener("click", () => App.go("home"));
-    if (s && typeof s.onFinish === "function") s.onFinish(false);
+    document.getElementById("finBtn").onclick = () => {
+      App.saveStreak();
+      const cb = this.state.onFinish;
+      this.state = null;
+      if (cb) cb(); else App.go("home");
+    };
   }
-
-  function finish() {
-    const s = state;
-    state = null;
-    const perfect = s.correctCount === s.steps.length;
-    if (perfect) {
-      App.addXP(50);
-      App.loseHeart();
-    }
-    document.getElementById("app").innerHTML = `
-      <div class="card center">
-        <div class="big-emoji">${perfect ? "🏁" : "🚗"}</div>
-        <h1>Поездка завершена</h1>
-        <p>Верно: ${s.correctCount} из ${s.steps.length}</p>
-        ${perfect ? "<p class='dim'>Бонус +50 XP, сердце восстановлено</p>" : ""}
-        <div class="btn-row"><button class="btn primary" id="t-back">На главную</button></div>
-      </div>
-    `;
-    document.getElementById("t-back").addEventListener("click", () => App.go("home"));
-    App.saveProgress();
-    App.renderHUD();
-    if (typeof s.onFinish === "function") s.onFinish(perfect);
-  }
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
-  }
-
-  return { start, quit: () => { state = null; App.render(); } };
-})();
+};
