@@ -1,34 +1,40 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0b1628" />
-  <title>🚦 Дорога — ПДД-тренажёр</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ПДД-Тренажёр «Дорога»</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Иконка сайта (чтобы не было ошибки 404 favicon) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚦</text></svg>">
 </head>
 <body>
- <div style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; background: radial-gradient(circle at 50% 0%, rgba(79, 138, 255, 0.15) 0%, transparent 70%); pointer-events:none;"></div>
-<header class="app-header">
-    <div class="header-inner">
-      <a class="brand" href="#" data-nav="home">🚦 Дорога</a>
-      <div class="hud">
-        <span class="hud-item" id="hud-streak" title="Стрик">🔥 0</span>
-        <span class="hud-item" id="hud-hearts" title="Сердца">❤️ 5/5</span>
+  <!-- Шапка -->
+  <header class="topbar">
+    <div class="logo">🚦 Дорога</div>
+    <div class="top-stats">
+      <div class="stat-pill" title="Стрик">
+        🔥 <span id="streakCount">0</span>
+      </div>
+      <div class="stat-pill" title="Сердца">
+        ❤️ <span id="heartsCount">5/5</span>
       </div>
     </div>
   </header>
 
-  <main id="app" class="app-main"></main>
+  <!-- Основной контент -->
+  <main id="app"></main>
 
-  <nav class="tabbar" id="tabbar">
-    <button class="tab" data-nav="home">🏠<span>Главная</span></button>
-    <button class="tab" data-nav="library">📚<span>Библиотека</span></button>
-    <button class="tab" data-nav="quiz">🎯<span>Тест</span></button>
-    <button class="tab" data-nav="modes">🎮<span>Режимы</span></button>
-    <button class="tab" data-nav="profile">👤<span>Профиль</span></button>
+  <!-- Нижняя навигация -->
+  <nav class="bottomnav">
+    <button data-route="home" class="active">🏠 Главная</button>
+    <button data-route="library">📚 Библиотека</button>
+    <button data-route="quiz">🎯 Тест</button>
+    <button data-route="modes">🎮 Режимы</button>
+    <button data-route="profile">👤 Профиль</button>
   </nav>
 
+  <!-- Подключение скриптов (строго в этом порядке) -->
   <script src="js/data.js"></script>
   <script src="js/quiz.js"></script>
   <script src="js/trip.js"></script>
