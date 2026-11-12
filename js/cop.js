@@ -58,7 +58,6 @@ const CopEngine = {
       const mainIdx = +mainRadio.value;
       const isMainCorrect = q.violations[mainIdx].isMain;
       
-      // Начисление XP и снятие сердец ТОЛЬКО ЗДЕСЬ
       let foundCount = 0;
       q.violations.forEach((v, i) => {
         if (v.isMain && checked.includes(i)) foundCount++;
