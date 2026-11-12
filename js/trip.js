@@ -3,7 +3,6 @@ const TripEngine = {
   start(onFinish) {
     const pool = SCENARIOS.filter(s => s.mode.includes("trip"));
     if (!pool.length) return alert("Сценарии не загружены.");
-    // Для простоты берём первые 10 (потом можно добавить перемешивание)
     const steps = pool.slice(0, 10);
     this.state = { steps, index: 0, correct: 0, onFinish };
     this.render();
