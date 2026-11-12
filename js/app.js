@@ -1,7 +1,3 @@
-// ============================================================
-// ЯДРО ПРИЛОЖЕНИЯ (Стрик, Роутинг, Профиль)
-// ============================================================
-
 const App = {
   route: "home",
   progress: {},
@@ -18,9 +14,7 @@ const App = {
   },
 
   loadProgress() {
-    try {
-      this.progress = JSON.parse(localStorage.getItem("pdd_progress") || "{}");
-    } catch(e) { this.progress = {}; }
+    try { this.progress = JSON.parse(localStorage.getItem("pdd_progress") || "{}"); } catch(e) { this.progress = {}; }
     this.renderTopBar();
   },
 
@@ -108,7 +102,6 @@ const App = {
   },
 
   viewHome() {
-    if (typeof PDD_DATA === 'undefined' || !PDD_DATA.blocks) return `<p style="padding:20px;color:red">Ошибка данных</p>`;
     return `
       <section class="home">
         <h1>Продолжайте серию 🔥</h1>
@@ -118,8 +111,8 @@ const App = {
               <div class="block-emoji">${b.emoji}</div>
               <h3>${b.title}</h3>
               ${b.sections.map(s => `
-                <button class="section-btn" data-section="${s.id}">
-                  ${s.title} <span class="sec-status">→</span>
+                <button class="section-btn ${s.isStub ? 'stub-btn' : ''}" data-section="${s.id}" data-stub="${!!s.isStub}">
+                  ${s.title} <span class="sec-status">${s.isStub ? '🔒' : '→'}</span>
                 </button>
               `).join("")}
             </div>
@@ -147,7 +140,7 @@ const App = {
             </div>
           `).join("")}
         </div>
-        <button class="btn-primary" id="startQuiz">🎯 Проверить себя (${section.questions.length} вопр.)</button>
+        ${section.questions && section.questions.length > 0 ? `<button class="btn-primary" id="startQuiz">🎯 Проверить себя (${section.questions.length} вопр.)</button>` : `<p style="text-align:center;color:#888;margin-top:20px">Вопросов пока нет</p>`}
       </section>
     `;
   },
@@ -159,7 +152,8 @@ const App = {
         ${PDD_DATA.blocks.map(b => `
           <h2 class="lib-block">${b.emoji} ${b.title}</h2>
           ${b.sections.map(s => `
-            <h3 class="lib-section">${s.title}</h3>
+            <h3 class="lib-section">${s.title} ${s.isStub ? '🔒' : ''}</h3>
+            ${s.isStub ? `<p style="color:#888;font-size:0.9rem;margin-bottom:10px">Раздел в разработке.</p>` : `
             <div class="card-list">
               ${s.cards.map(c => `
                 <div class="lib-card">
@@ -171,7 +165,7 @@ const App = {
                   </div>
                 </div>
               `).join("")}
-            </div>
+            </div>`}
           `).join("")}
         `).join("")}
       </section>
@@ -179,17 +173,16 @@ const App = {
   },
 
   viewQuizMenu() {
+    const availableSections = [];
+    PDD_DATA.blocks.forEach(b => b.sections.forEach(s => {
+      if (s.questions && s.questions.length > 0) availableSections.push(s);
+    }));
     return `
       <section class="quiz-menu">
         <h1>🎯 Выберите раздел для теста</h1>
-        ${PDD_DATA.blocks.map(b => `
-          <h2 class="lib-block">${b.emoji} ${b.title}</h2>
-          ${b.sections.map(s => `
-            <button class="section-btn" data-section="${s.id}">
-              ${s.title} <span>${s.questions.length} вопр.</span>
-            </button>
-          `).join("")}
-        `).join("")}
+        ${availableSections.length ? availableSections.map(s => `
+          <button class="section-btn" data-section="${s.id}">${s.title} <span>${s.questions.length} вопр.</span></button>
+        `).join("") : '<p>Нет доступных тестов.</p>'}
       </section>
     `;
   },
@@ -201,17 +194,17 @@ const App = {
         <div class="cards-grid">
           <div class="block-card">
             <h3>🚗 Поездка</h3>
-            <p class="sub">10 сценариев, сердца.</p>
+            <p class="sub">Квест, 10 сценариев.</p>
             <button class="btn-primary" id="startTripBtn">Начать поездку</button>
           </div>
           <div class="block-card">
             <h3>🚔 Гаишник</h3>
-            <p class="sub">Отметьте нарушения и главное.</p>
+            <p class="sub">Отметьте нарушения.</p>
             <button class="btn-primary" id="startCopBtn">Начать проверку</button>
           </div>
           <div class="block-card">
             <h3>🎯 Сценарий дня</h3>
-            <p class="sub">2 сценария, 1 жизнь.</p>
+            <p class="sub">1 жизнь.</p>
             <button class="btn-primary" id="startDailyBtn">Играть</button>
           </div>
         </div>
@@ -228,7 +221,7 @@ const App = {
         <div class="block-card" style="margin-bottom:20px">
           <div style="font-size:1.2rem;font-weight:bold;color:#3d6fb5">${lvl.name}</div>
           <div>${p.xp || 0} XP</div>
-          <div class="progress" style="margin-top:10px;margin-bottom:5px"><div class="bar" style="width:${Math.min(100, (p.xp||0)/20)}%"></div></div>
+          <div class="progress" style="margin-top:10px"><div class="bar" style="width:${Math.min(100, (p.xp||0)/20)}%"></div></div>
         </div>
         <div class="stat-grid">
           <div class="stat"><span>${p.streak || 0}</span>🔥 Стрик</div>
@@ -242,6 +235,7 @@ const App = {
   bindEvents() {
     document.querySelectorAll(".section-btn").forEach(btn => {
       btn.onclick = () => {
+        if (btn.dataset.stub === "true") return alert("Этот раздел в разработке! Скоро добавим.");
         this.currentSection = this.findSection(btn.dataset.section);
         this.go("section");
       };
