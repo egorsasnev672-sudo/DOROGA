@@ -145,3 +145,11 @@ h2 { font-size: 1.3rem; margin: 28px 0 16px; font-weight: 700; }
 .explain.ok { border-left-color: var(--success); }
 .explain.err { border-left-color: var(--error); }
 .big-emoji { font-size: 4rem; text-align: center; margin: 16px 0; }
+/* Анимация мигалки для логотипа */
+@keyframes flash-blue-red {
+  0%, 100% { color: var(--navy-500); text-shadow: 0 0 8px var(--navy-500); }
+  50% { color: var(--error); text-shadow: 0 0 12px var(--error); }
+}
+.logo {
+  animation: flash-blue-red 1.5s infinite;
+}
